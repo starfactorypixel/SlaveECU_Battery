@@ -2,6 +2,7 @@
 #include <BMSManager.h>
 #include <drivers/BMSAnt.h>
 #include <drivers/BMSOther.h>
+#include <DrakePinD.hpp>
 #include <CUtils.h>
 
 extern UART_HandleTypeDef hBms1Uart;
@@ -16,6 +17,9 @@ namespace BMSLogic
 	BMSAnt Ant1;
 	BMSAnt Ant2;
 	BMSManager Bms(BMS_UART_TX, BMS_ERROR);
+
+	DrakePinD Bms1En({GPIOA, GPIO_PIN_1}, DrakePin::Output, DrakePin::Low);
+	DrakePinD Bms2En({GPIOB, GPIO_PIN_3}, DrakePin::Output, DrakePin::Low);
 
 
 	void OnLowVoltageBatt1Stream(auto coll_el, uint8_t idx);
@@ -127,6 +131,10 @@ namespace BMSLogic
 	
 	inline void Setup()
 	{
+		Bms1En.Init();
+		Bms2En.Init();
+		// Реализовать управление Bms1En Bms2En
+
 		memset(uart_data, 0x00, sizeof(uart_data));
 		
 		uart_data[BMS_1].hal = &hBms1Uart;
