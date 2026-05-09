@@ -162,6 +162,9 @@ namespace BMSLogic
 		
 		HAL_UARTEx_ReceiveToIdle_IT(uart_data[BMS_1].hal, uart_data[BMS_1].hot, sizeof(uart_data[BMS_1].hot));
 		HAL_UARTEx_ReceiveToIdle_IT(uart_data[BMS_2].hal, uart_data[BMS_2].hot, sizeof(uart_data[BMS_2].hot));
+
+		Bms1En.On();
+		Bms2En.On();
 		
 		return;
 	}
