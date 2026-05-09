@@ -36,7 +36,7 @@ namespace SPI
 		HAL_SPI_WriteReadFast(&hspi2, tx_data, rx_data, length, 200);
 	}
 	
-	SPIManager<2> manager(SPI_Config, SPI_Write, SPI_Read, SPI_WriteRead);
+	SPIManager<1> manager(SPI_Config, SPI_Write, SPI_Read, SPI_WriteRead);
 	SPI_ZD25Q80B flash({GPIOB, GPIO_PIN_12}, SPI_BAUDRATEPRESCALER_2);
 	
 	
