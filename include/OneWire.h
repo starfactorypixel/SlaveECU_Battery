@@ -30,7 +30,7 @@ namespace OneWire
 	
 	inline void Loop(uint32_t &current_time)
 	{
-		sensors.Processing(current_time);
+		//sensors.Processing(current_time);
 		
 		
 		// При выходе обновляем время
