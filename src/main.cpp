@@ -15,7 +15,6 @@ ADC_HandleTypeDef hadc1;
 CAN_HandleTypeDef hcan;
 CRC_HandleTypeDef hcrc;
 SPI_HandleTypeDef hspi2;
-TIM_HandleTypeDef htim1;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
