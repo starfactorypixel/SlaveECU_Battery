@@ -1,10 +1,11 @@
 #pragma once
+#include <ConstantLibrary.h>
 
 namespace About
 {
 	static constexpr char name[] = "BatteryECU";
 	static constexpr char desc[] = "Battery interface board for Pixel project";
-	static constexpr char board_type = Consts::BOARD_TYPE_BMS1;		// 5 bits
+	static constexpr char board_type = Consts::BOARD_TYPE_BATTERIES;		// 5 bits
 	static constexpr char board_ver = 3;		// 3 bits
 	static constexpr char soft_ver = 3;			// 6 bits
 	static constexpr char can_ver = 1;			// 2 bits
