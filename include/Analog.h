@@ -11,7 +11,7 @@ namespace Analog
 	void OnMuxResponse(uint8_t address, uint16_t value);
 	
 	DrakePinA adc_pin({&hadc1, GPIOB, GPIO_PIN_1, ADC_CHANNEL_9}, ADC_SAMPLETIME_7CYCLES_5);
-	volt_calc_t VoltCalcParams = {((1 << 12) - 1), 3300, 69000, 10000, 0};
+	DividerVoltageCalc VoltCalc(12, 3300, 69000, 10000);
 	
 	AnalogMux<0> mux( OnMuxRequest, OnMuxResponse
 	/*,
@@ -32,7 +32,7 @@ namespace Analog
 	{
 		if(address == 0)
 		{
-			uint16_t vin = VoltageCalculate(value, VoltCalcParams);
+			uint16_t vin = VoltCalc.GetmV(value);
 			uint8_t *vin_bytes = (uint8_t *)&vin;
 			
 			CANLib::obj_block_health.SetValue(0, vin_bytes[0]);
