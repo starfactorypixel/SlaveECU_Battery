@@ -1,4 +1,3 @@
-//#include <math.h>
 #include "main.h"
 #include <ConstantLibrary.h>
 #include <LoggerLibrary.h>
@@ -12,6 +11,8 @@
 #include <OneWire.h>
 
 ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
+DMA_HandleTypeDef hdma_adc1;
 CAN_HandleTypeDef hcan;
 CRC_HandleTypeDef hcrc;
 SPI_HandleTypeDef hspi2;
@@ -21,7 +22,9 @@ UART_HandleTypeDef huart3;
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
+static void MX_ADC2_Init(void);
 static void MX_CAN_Init(void);
 static void MX_CRC_Init(void);
 static void MX_SPI2_Init(void);
@@ -155,7 +158,9 @@ int main(void)
 	SystemClock_Config();
 	
 	MX_GPIO_Init();
+	MX_DMA_Init();
 	MX_ADC1_Init();
+	MX_ADC2_Init();
 	MX_CAN_Init();
 	MX_CRC_Init();
 	MX_SPI2_Init();
@@ -165,6 +170,7 @@ int main(void)
 
 	About::Setup();
 	Leds::Setup();
+	Analog::Setup();
 	SPI::Setup();
 	BMSLogic::Setup();
 	OneWire::Setup();
@@ -176,6 +182,7 @@ int main(void)
 	{
 		About::Loop(current_time);
 		Leds::Loop(current_time);
+		Analog::Loop(current_time);
 		SPI::Loop(current_time);
 		BMSLogic::Loop(current_time);
 		OneWire::Loop(current_time);
@@ -224,13 +231,30 @@ void SystemClock_Config(void)
 static void MX_ADC1_Init(void)
 {
 	hadc1.Instance = ADC1;
-	hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-	hadc1.Init.ContinuousConvMode = DISABLE;
+	hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
+	hadc1.Init.ContinuousConvMode = ENABLE;
 	hadc1.Init.DiscontinuousConvMode = DISABLE;
 	hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
 	hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-	hadc1.Init.NbrOfConversion = 1;
+	hadc1.Init.NbrOfConversion = Analog::regular_channel_count;
 	if(HAL_ADC_Init(&hadc1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	
+	Analog::RegularConfig();
+}
+
+static void MX_ADC2_Init(void)
+{
+	hadc2.Instance = ADC2;
+	hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+	hadc2.Init.ContinuousConvMode = DISABLE;
+	hadc2.Init.DiscontinuousConvMode = DISABLE;
+	hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+	hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+	hadc2.Init.NbrOfConversion = 1;
+	if(HAL_ADC_Init(&hadc2) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -348,6 +372,14 @@ static void MX_USART3_UART_Init(void)
 	{
 		Error_Handler();
 	}
+}
+
+static void MX_DMA_Init(void)
+{
+	__HAL_RCC_DMA1_CLK_ENABLE();
+	
+	HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 }
 
 static void MX_GPIO_Init(void)
