@@ -33,18 +33,29 @@ namespace Analog
 	{
 		if(address == 1)
 		{
-			uint16_t vin = VoltCalc.GetmV(value);
-			uint8_t *vin_bytes = (uint8_t *)&vin;
-			
-			CANLib::obj_block_health.SetValue(0, vin_bytes[0]);
-			CANLib::obj_block_health.SetValue(1, vin_bytes[1]);
 
-			uint16_t adc = regular_buf[0];
-			DEBUG_LOG_TOPIC("DMA", "    %04d, %4d\n", adc, GetF103Temperature(adc, 3296));
 		}
 		
 		return;
 	}
+	
+	uint16_t GetInsideVoltage()
+	{
+		const uint16_t adc = mux.Get(1);
+		return VoltCalc.GetmV(adc);
+	}
+	
+	uint16_t GetInsideCurrent()
+	{
+		return 0;
+	}
+	
+	int8_t GetInsideTemperature()
+	{
+		const uint16_t adc = GetRegularValue(PORT_REG_STMTEMP);
+		return (GetF103Temperature(adc, 3300) + 5) / 10;
+	}
+	
 	
 	inline void Setup()
 	{

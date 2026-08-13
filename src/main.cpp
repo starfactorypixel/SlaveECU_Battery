@@ -4,11 +4,11 @@
 #include <SPI.h>
 #include <About.h>
 #include <Leds.h>
-#include <CANLogic.h>
 #include <Temperature.h>
 #include <BMSLogic.h>
 #include <Analog.h>
 #include <OneWire.h>
+#include <CANLogic.h>
 
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
@@ -37,52 +37,58 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	CAN_RxHeaderTypeDef RxHeader = {0};
 	uint8_t RxData[8] = {0};
-	
-	if( HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK )
+	if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
 	{
-		CANLib::can_manager.IncomingCANFrame(RxHeader.StdId, RxData, RxHeader.DLC);
+		CANLib::can_manager.PushFrameToRX(RxHeader.StdId, RxData, RxHeader.DLC);
 	}
+	
+	return;
+}
+
+void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	CANLib::can_manager.TryToSendCANFrameFromTXQueue();
+	
+	return;
+}
+void HAL_CAN_TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	CANLib::can_manager.TryToSendCANFrameFromTXQueue();
+	
+	return;
+}
+void HAL_CAN_TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
+{
+	CANLib::can_manager.TryToSendCANFrameFromTXQueue();
 	
 	return;
 }
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 {
-	Leds::obj.SetOn(Leds::LED_RED, 100);
+	uint32_t code = HAL_CAN_GetError(hcan);
+	if((code & (HAL_CAN_ERROR_TX_ALST0 | HAL_CAN_ERROR_TX_ALST1 | HAL_CAN_ERROR_TX_ALST2)) != 0)
+		return;
 	
+	Leds::obj.SetOn(Leds::LED_RED, 100);
 	DEBUG_LOG_TOPIC("CAN", "RX error event, code: 0x%08lX\n", HAL_CAN_GetError(hcan));
+	HAL_CAN_ResetError(hcan);
 	
 	return;
 }
 
-void HAL_CAN_Send(can_object_id_t id, uint8_t *data, uint8_t length)
+bool HAL_CAN_Send(can_object_id_t id, uint8_t *TxData, uint8_t length)
 {
-	CAN_TxHeaderTypeDef TxHeader = {0};
-	uint8_t TxData[8] = {0};
-	uint32_t TxMailbox = 0;
+	if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0) return false;
 	
-	TxHeader.StdId = id;
-	TxHeader.ExtId = 0;
-	TxHeader.RTR  = CAN_RTR_DATA;
-	TxHeader.IDE = CAN_ID_STD;
-	TxHeader.DLC = length;
-	TxHeader.TransmitGlobalTime = DISABLE;
-	memcpy(TxData, data, length);
+	uint32_t TxMailbox;
+	CAN_TxHeaderTypeDef TxHeader = { id, 0, CAN_ID_STD, CAN_RTR_DATA, length, DISABLE };
+	if(HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox) == HAL_OK) return true;
 	
-	while( HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0 )
-	{
-		Leds::obj.SetOn(Leds::LED_RED);
-	}
-	Leds::obj.SetOff(Leds::LED_RED);
+	Leds::obj.SetOn(Leds::LED_RED, 100);
+	DEBUG_LOG_TOPIC("CAN", "TX error event, code: 0x%08lX\n", HAL_CAN_GetError(&hcan));
 	
-	if( HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox) != HAL_OK )
-	{
-		Leds::obj.SetOn(Leds::LED_RED, 100);
-
-		DEBUG_LOG_TOPIC("CAN", "TX error event, code: 0x%08lX\n", HAL_CAN_GetError(&hcan));
-	}
-	
-	return;
+	return false;
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
@@ -273,7 +279,7 @@ static void MX_CAN_Init(void)
 	hcan.Init.TimeTriggeredMode = DISABLE;
 	hcan.Init.AutoBusOff = ENABLE;
 	hcan.Init.AutoWakeUp = ENABLE;
-	hcan.Init.AutoRetransmission = DISABLE;
+	hcan.Init.AutoRetransmission = ENABLE;
 	hcan.Init.ReceiveFifoLocked = ENABLE;
 	hcan.Init.TransmitFifoPriority = ENABLE;
 	if(HAL_CAN_Init(&hcan) != HAL_OK)
