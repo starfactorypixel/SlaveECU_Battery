@@ -45,9 +45,14 @@ class BMSAnt : public BMSDeviceInterface
 					// Напихиваем полезные данные в общий объект
 					BMSManagerData::common_data_t *common_data = &_manager->common_obj[_idx].data;
 					
-					common_data->voltage = data->total_voltage;
-					common_data->current = data->total_current;
-					common_data->power = data->total_power;
+					common_data->current_pwr = data->total_current;
+					common_data->percent = data->capacity_percent;
+					common_data->power_pwr = data->total_power;
+					common_data->voltage_pwr = data->total_voltage;
+					common_data->cell_vmin_volt = data->cell_vmin_volt;
+					common_data->cell_vmax_volt = data->cell_vmax_volt;
+					common_data->cell_delta_volt = data->cell_vmax_volt - data->cell_vmin_volt;
+					memcpy(common_data->cell_voltage, data->cell_voltage, BMSANT::CellsNumber);
 					
 					if(data->status_charge_fet > 1 || data->status_dcharge_fet > 1)
 					{
