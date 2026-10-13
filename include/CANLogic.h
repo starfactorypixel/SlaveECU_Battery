@@ -70,14 +70,14 @@ namespace CANLib
 		return;
 	}
 
-	static inline uint8_t BatteryPercentClassifier(uint8_t idx, uint8_t value)
+	static inline uint8_t BatteryPercentClassifier(uint8_t idx, const uint8_t value)
 	{
 		if(value <= 20) return CAN_FUNC_TIMER_CRITICAL;
 		if(value <= 50) return CAN_FUNC_TIMER_WARNING;
 		return CAN_FUNC_TIMER_NORMAL;
 	}
 
-	static inline uint8_t CellMinMaxDeltaClassifier(uint8_t idx, uint16_t value)
+	static inline uint8_t CellMinMaxDeltaClassifier(uint8_t idx, const uint16_t value)
 	{
 		switch(idx)
 		{
@@ -91,7 +91,7 @@ namespace CANLib
 		return CAN_FUNC_TIMER_NORMAL;
 	}
 
-	static inline uint8_t TemperatureClassifier(uint8_t idx, int8_t value)
+	static inline uint8_t TemperatureClassifier(uint8_t idx, const int8_t value)
 	{
 		if(value >= 80) return CAN_FUNC_TIMER_CRITICAL;
 		if(value >= 60) return CAN_FUNC_TIMER_WARNING;
