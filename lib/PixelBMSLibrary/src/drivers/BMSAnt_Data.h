@@ -119,7 +119,7 @@ namespace BMSANT
 		uint16_t tire_length;			// WAT?
 		uint16_t pulses_num;			// WAT?
 		uint8_t  relay;					// WAT?
-		uint32_t total_power;			// Текущая мощность, 1.0 W
+		int32_t total_power;			// Текущая мощность, 1.0 W
 		uint8_t  cell_vmax_num;			// Номер батарее с максимальный напряжением.
 		uint16_t cell_vmax_volt;		// Напряжение батареи с максимальным напряжением, 0.001 V
 		uint8_t  cell_vmin_num;			// Номер батарее с минимальным напряжением.
@@ -151,7 +151,7 @@ namespace BMSANT
 		uint8_t  cell_vmin_num;				// Номер батарее с минимальным напряжением.
 		uint16_t cell_vmax_volt;			// Напряжение батареи с максимальным напряжением, 0.001 V
 		uint8_t  cell_vmax_num;				// Номер батарее с максимальный напряжением.
-		uint32_t total_power;				// Текущая мощность, 1.0 W
+		int32_t total_power;				// Текущая мощность, 1.0 W
 		uint8_t  relay;						// WAT?
 		uint16_t pulses_num;				// WAT?
 		uint16_t tire_length;				// WAT?

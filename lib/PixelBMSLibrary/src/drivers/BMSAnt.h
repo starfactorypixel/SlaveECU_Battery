@@ -52,11 +52,12 @@ class BMSAnt : public BMSDeviceInterface
 					common_data->cell_vmin_volt = data->cell_vmin_volt;
 					common_data->cell_vmax_volt = data->cell_vmax_volt;
 					common_data->cell_delta_volt = data->cell_vmax_volt - data->cell_vmin_volt;
-					memcpy(common_data->cell_voltage, data->cell_voltage, BMSANT::CellsNumber);
+					memcpy(common_data->cell_voltage, data->cell_voltage, sizeof(data->cell_voltage));
 					
 					if(data->status_charge_fet > 1 || data->status_dcharge_fet > 1)
 					{
 						_error.code = ERROR_CTRL;
+						#warning Add return status_* code
 					}
 					
 					if(_callback_ready != nullptr)
@@ -131,8 +132,8 @@ class BMSAnt : public BMSDeviceInterface
 		
 		callback_ready_t _callback_ready;
 		
-		bool _busy;								// Флаг того, что разбор данных не окончен и новые копировать нельзя
-		bool _ready;							// Флаг того, что массив данные приняты и готовы к анализу
+		volatile bool _busy;					// Флаг того, что разбор данных не окончен и новые копировать нельзя
+		volatile bool _ready;					// Флаг того, что массив данные приняты и готовы к анализу
 		uint8_t _data[BMSANT::PacketSize];		// Холодный массив данных (Работа в программе)
 		uint8_t _request_try_count;				// Кол-во попыток запроса данных
 
