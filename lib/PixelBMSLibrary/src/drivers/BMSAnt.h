@@ -70,7 +70,7 @@ class BMSAnt : public BMSDeviceInterface
 				_request_try_count = 0;
 			}
 			
-			if(time - _last_request_time > BMSANT::PacketRequestInerval)
+			if(time - _last_request_time > BMSANT::PacketRequestInterval)
 			{
 				_last_request_time = time;
 

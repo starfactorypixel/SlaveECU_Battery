@@ -6,7 +6,7 @@ namespace BMSANT
 	static constexpr uint8_t PacketSize = 140U;
 	static constexpr uint8_t PacketHeader[] = {0xAA, 0x55, 0xAA, 0xFF};
 	static constexpr uint8_t PacketRequest[] = {0x5A, 0x5A, 0x00, 0x00, 0x00, 0x00};
-	static constexpr uint16_t PacketRequestInerval = 250;
+	static constexpr uint16_t PacketRequestInterval = 250;
 	static constexpr uint8_t CellsNumber = 32U;
 	static constexpr uint8_t TempsNumber = 6U;
 	
