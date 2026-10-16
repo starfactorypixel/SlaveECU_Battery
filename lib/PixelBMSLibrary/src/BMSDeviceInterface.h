@@ -40,9 +40,9 @@ class BMSDeviceInterface
 		bool GetNewError(error_code_t &code)
 		{
 			code = _error.code;
-			if(_error.code != _error.prev)
+			if(code != _error.prev)
 			{
-				_error.prev = _error.code;
+				_error.prev = code;
 				return true;
 			}
 			
@@ -57,7 +57,7 @@ class BMSDeviceInterface
 
 		struct error_t
 		{
-			error_code_t code = ERROR_NONE;
+			volatile error_code_t code = ERROR_NONE;
 			error_code_t prev = ERROR_NONE;
 		} _error;
 		

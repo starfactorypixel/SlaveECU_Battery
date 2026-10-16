@@ -11,7 +11,7 @@ class BMSAnt : public BMSDeviceInterface
 	
 	public:
 		
-		BMSAnt() : BMSDeviceInterface(), _callback_ready(nullptr), _busy(false), _ready(false), _request_try_count(0), _last_request_time(0)
+		BMSAnt() : BMSDeviceInterface(), _callback_ready(nullptr), _busy(false), _ready(false), _alarm(false), _request_try_count(0), _last_request_time(0)
 		{
 			memset(_data, 0x00, sizeof(_data));
 			
@@ -35,8 +35,9 @@ class BMSAnt : public BMSDeviceInterface
 			if(_ready == true)
 			{
 				_ready = false;
+				_Barrier();
 			
-				// Т.к. данные представленны в формате big-endian, обращаем массив для просторы работы
+				// Т.к. данные представлены в формате big-endian, обращаем массив для просторы работы
 				array_reverse(_data, sizeof(_data));
 
 				_PostProcessing();
@@ -54,18 +55,17 @@ class BMSAnt : public BMSDeviceInterface
 					common_data->cell_delta_volt = data->cell_vmax_volt - data->cell_vmin_volt;
 					memcpy(common_data->cell_voltage, data->cell_voltage, sizeof(data->cell_voltage));
 					
-					if(data->status_charge_fet > 1 || data->status_dcharge_fet > 1)
-					{
-						_error.code = ERROR_CTRL;
-						#warning Add return status_* code
-					}
-					
+					_alarm = (data->status_charge_fet > 1 || data->status_dcharge_fet > 1);
+					_error.code = (_alarm == true) ? ERROR_CTRL : ERROR_NONE;
+					#warning Add return status_* code
+
 					if(_callback_ready != nullptr)
 					{
 						_callback_ready(data);
 					}
 				}
 
+				_Barrier();
 				_busy = false;
 				_request_try_count = 0;
 			}
@@ -83,6 +83,7 @@ class BMSAnt : public BMSDeviceInterface
 			{
 				_manager->ResetCommonData(_idx);
 				_error.code = ERROR_LOST;
+				_alarm = false;
 			}
 			
 			return;
@@ -91,18 +92,19 @@ class BMSAnt : public BMSDeviceInterface
 		// Приём пакета, в прерывании. Минимум самый важный действий.
 		virtual void DataRx(const uint8_t *raw, const uint8_t length) override
 		{
-			_error.code = ERROR_NONE;
-			
 			if(_busy == true){ _error.code = ERROR_BUSY; return; }
 			if(length != BMSANT::PacketSize){ _error.code = ERROR_LENGTH; return; }
 			if(memcmp(BMSANT::PacketHeader, raw, sizeof(BMSANT::PacketHeader)) != 0){ _error.code = ERROR_HEADER; return; }
 			if(_CheckCRCSum(raw) == false){ _error.code = ERROR_CRC; return; }
 			
 			memcpy(_data, raw, sizeof(_data));
+			_Barrier();
 			
-			_ready = true;
+			// Пакет исправен: сбрасываем ошибку канала, но не теряем аварию контроллера
+			_error.code = (_alarm == true) ? ERROR_CTRL : ERROR_NONE;
 			_busy = true;
-			
+			_ready = true;
+
 			return;
 		}
 		
@@ -111,6 +113,13 @@ class BMSAnt : public BMSDeviceInterface
 		
 	private:
 		
+		// Компиляторный барьер: запрещает переносить обращения к памяти (_data) через флаги.
+		// На одноядерном Cortex-M3 этого достаточно, __DMB() не нужен.
+		static inline void _Barrier()
+		{
+			__asm__ __volatile__("" ::: "memory");
+		}
+
 		bool _CheckCRCSum(const uint8_t *array)
 		{
 			uint16_t crc = 0x0000;
@@ -134,6 +143,7 @@ class BMSAnt : public BMSDeviceInterface
 		
 		volatile bool _busy;					// Флаг того, что разбор данных не окончен и новые копировать нельзя
 		volatile bool _ready;					// Флаг того, что массив данные приняты и готовы к анализу
+		volatile bool _alarm;					// Контроллер сообщает об аварии
 		uint8_t _data[BMSANT::PacketSize];		// Холодный массив данных (Работа в программе)
 		uint8_t _request_try_count;				// Кол-во попыток запроса данных
 
