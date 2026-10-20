@@ -4,6 +4,7 @@
 #include "CanObj/CanBlockCfg.hpp"
 #include "CanObj/CanInfoParam.hpp"
 #include "CanObj/CanStreamObj.hpp"
+#include "CanObj/CanLowVoltageMinMax.hpp"
 #include "CANFunc.h"
 #include <DrakePinD.hpp>
 
@@ -40,8 +41,8 @@ namespace CANLib
 	//CanInfoParam<int8_t>   obj_battery_state_2(CAN_BASE_ID+11, CAN_TIMER_DISABLED, 300);
 	CanInfoParam<uint16_t> obj_high_voltage_1(CAN_BASE_ID+12, 1000, &data1.voltage_pwr);
 	CanInfoParam<uint16_t> obj_high_voltage_2(CAN_BASE_ID+13, 1000, &data2.voltage_pwr);
-	CanInfoParam<uint16_t, 3> obj_low_voltage_min_max_delta_1(CAN_BASE_ID+14, 5000, &data1.cell_vmin_volt, &data1.cell_vmax_volt, &data1.cell_delta_volt);
-	CanInfoParam<uint16_t, 3> obj_low_voltage_min_max_delta_2(CAN_BASE_ID+15, 5000, &data2.cell_vmin_volt, &data2.cell_vmax_volt, &data2.cell_delta_volt);
+	CanLowVoltageMinMax obj_low_voltage_min_max_1(CAN_BASE_ID+14, 5000, &data1.cell_vmin_volt, &data1.cell_vmax_volt, &data1.cell_vmin_num, &data1.cell_vmax_num);
+	CanLowVoltageMinMax obj_low_voltage_min_max_2(CAN_BASE_ID+15, 5000, &data2.cell_vmin_volt, &data2.cell_vmax_volt, &data2.cell_vmin_num, &data2.cell_vmax_num);
 	CanStreamObj<uint16_t> obj_low_voltage_batt_1(CAN_BASE_ID+16, data1.cell_voltage, BMSANT::CellsNumber);
 	CanStreamObj<uint16_t> obj_low_voltage_batt_2(CAN_BASE_ID+17, data2.cell_voltage, BMSANT::CellsNumber);
 	CanInfoParam<int8_t>   obj_max_temperature_1(CAN_BASE_ID+18, 5000, &Temp::max[0]);
@@ -76,21 +77,14 @@ namespace CANLib
 		if(value <= 50) return CAN_FUNC_TIMER_WARNING;
 		return CAN_FUNC_TIMER_NORMAL;
 	}
-
-	static inline uint8_t CellMinMaxDeltaClassifier(uint8_t idx, const uint16_t value)
-	{
-		switch(idx)
-		{
-			case 2:
-			{
-				if(value >= 100) return CAN_FUNC_TIMER_CRITICAL;
-				if(value >= 50) return CAN_FUNC_TIMER_WARNING;
-				return CAN_FUNC_TIMER_NORMAL;
-			}
-		}
+	
+	static inline uint8_t CellMinMaxClassifier(uint8_t idx, const uint16_t value)
+    {
+		if(value <= 3000 || value >= 4250) return CAN_FUNC_TIMER_CRITICAL;
+		if(value <= 3300 || value >= 4220) return CAN_FUNC_TIMER_WARNING;
 		return CAN_FUNC_TIMER_NORMAL;
 	}
-
+	
 	static inline uint8_t TemperatureClassifier(uint8_t idx, const int8_t value)
 	{
 		if(value >= 80) return CAN_FUNC_TIMER_CRITICAL;
@@ -105,8 +99,8 @@ namespace CANLib
 
 		obj_battery_percent_1.SetValueClassifier(BatteryPercentClassifier);
 		obj_battery_percent_2.SetValueClassifier(BatteryPercentClassifier);
-		obj_low_voltage_min_max_delta_1.SetValueClassifier(CellMinMaxDeltaClassifier);
-		obj_low_voltage_min_max_delta_2.SetValueClassifier(CellMinMaxDeltaClassifier);
+		obj_low_voltage_min_max_1.SetValueClassifier(CellMinMaxClassifier);
+		obj_low_voltage_min_max_2.SetValueClassifier(CellMinMaxClassifier);
 		obj_max_temperature_1.SetValueClassifier(TemperatureClassifier);
 		obj_max_temperature_2.SetValueClassifier(TemperatureClassifier);
 
@@ -122,8 +116,8 @@ namespace CANLib
 		//can_manager.AddObject(obj_battery_state_2);
 		can_manager.AddObject(obj_high_voltage_1);
 		can_manager.AddObject(obj_high_voltage_2);
-		can_manager.AddObject(obj_low_voltage_min_max_delta_1);
-		can_manager.AddObject(obj_low_voltage_min_max_delta_2);
+		can_manager.AddObject(obj_low_voltage_min_max_1);
+		can_manager.AddObject(obj_low_voltage_min_max_2);
 		can_manager.AddObject(obj_low_voltage_batt_1);
 		can_manager.AddObject(obj_low_voltage_batt_2);
 		can_manager.AddObject(obj_max_temperature_1);
