@@ -53,6 +53,8 @@ class BMSAnt : public BMSDeviceInterface
 					common_data->cell_vmin_volt = data->cell_vmin_volt;
 					common_data->cell_vmax_volt = data->cell_vmax_volt;
 					common_data->cell_delta_volt = data->cell_vmax_volt - data->cell_vmin_volt;
+					common_data->cell_vmin_num = data->cell_vmin_num;
+					common_data->cell_vmax_num = data->cell_vmax_num;
 					memcpy(common_data->cell_voltage, data->cell_voltage, sizeof(data->cell_voltage));
 					
 					_alarm = (data->status_charge_fet > 1 || data->status_dcharge_fet > 1);
