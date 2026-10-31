@@ -1,14 +1,18 @@
 #pragma once
-#include <OneWireTSensEx.h>
+#include <OneWireDriver.h>
+#include <OneWireTSens.h>
+#include <CanObj/ICanStream.hpp>
+
+extern ICanStream &CanTempStream1;
+extern ICanStream &CanTempStream2;
 
 namespace OneWire
 {
 	TIM_HandleTypeDef htim1;
-	
-	OneWireDriver oneWire(GPIOB, GPIO_PIN_9, &htim1);
-	OneWireTSensEx<16> sensors(oneWire);
-	
-	
+
+	OneWireDriver bus(GPIOB, GPIO_PIN_9, &htim1);
+	OneWireTSens<16> sensors(bus);
+
 	static HAL_StatusTypeDef MX_TIM1_Init(void)
 	{
 		__HAL_RCC_TIM1_CLK_ENABLE();
@@ -32,20 +36,25 @@ namespace OneWire
 	inline void Setup()
 	{
 		MX_TIM1_Init();
-		
-		sensors.RegReadyCallback([](OneWireTSensEx<16>::sensor_t *obj, uint8_t count) -> void
+
+		sensors.RegReadyCallback([](const OneWireTSensor *sensor, uint8_t count)
 		{
 			for(uint8_t i = 0; i < count; ++i)
 			{
-				Temp::PutFrom1WireByIdx(0, obj[i].temp, i);
-				Temp::PutFrom1WireByIdx(1, obj[i].temp, i);
+				//if(sensor[i].IsValid() == false) continue;
+				uint8_t idx = BMSANT::TempsNumber + i;
+				CanTempStream1.Set(idx, sensor[i].GetTemp8());
+				CanTempStream2.Set(idx, sensor[i].GetTemp8());
 
-				Logger.Printf("Rom: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X, Temp: %05d°C, Valid: %d, Min: %d, Mid: %d, Max: %d", 
-				obj[i].rom->raw[0], obj[i].rom->raw[1], obj[i].rom->raw[2], obj[i].rom->raw[3], 
-				obj[i].rom->raw[4], obj[i].rom->raw[5], obj[i].rom->raw[6], obj[i].rom->raw[7], 
-				obj[i].temp, obj[i].valid, sensors.GetMinTemp(), sensors.GetMidTemp(), sensors.GetMaxTemp()).PrintNewLine();
+				OneWireDriver::rom_t rom = sensor[i].GetRom();
+
+				Logger.Printf("Rom: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X, Temp: % 5d°C, Valid: %d, Min: %d, Mid: %d, Max: %d", 
+				rom.raw[0], rom.raw[1], rom.raw[2], rom.raw[3], 
+				rom.raw[4], rom.raw[5], rom.raw[6], rom.raw[7], 
+				sensor[i].GetTemp(), sensor[i].IsValid(), sensors.GetMinTemp(), sensors.GetAvgTemp(), sensors.GetMaxTemp()).PrintNewLine();
 			}
-		});		
+			DEBUG_LOG_SIMPLE("----\n");
+		});	
 		
 		return;
 	}

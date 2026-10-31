@@ -18,8 +18,7 @@ namespace CANLib
 	
 	DrakePinD can_rs({GPIOA, GPIO_PIN_15}, DrakePin::OutputOpenDrain, DrakePin::High);
 
-
-
+	int8_t max_temp[2] = {};
 
 
 	CANManager<CFG_CANObjectsCount> can_manager(&HAL_CAN_Send, &HAL_GetTick, &OnInterruptCtrl);
@@ -43,12 +42,12 @@ namespace CANLib
 	CanInfoParam<uint16_t> obj_high_voltage_2(CAN_BASE_ID+13, 1000, &data2.voltage_pwr);
 	CanLowVoltageMinMax obj_low_voltage_min_max_1(CAN_BASE_ID+14, 5000, &data1.cell_vmin_volt, &data1.cell_vmax_volt, &data1.cell_vmin_num, &data1.cell_vmax_num);
 	CanLowVoltageMinMax obj_low_voltage_min_max_2(CAN_BASE_ID+15, 5000, &data2.cell_vmin_volt, &data2.cell_vmax_volt, &data2.cell_vmin_num, &data2.cell_vmax_num);
-	CanStreamObj<uint16_t> obj_low_voltage_batt_1(CAN_BASE_ID+16, data1.cell_voltage, BMSANT::CellsNumber);
-	CanStreamObj<uint16_t> obj_low_voltage_batt_2(CAN_BASE_ID+17, data2.cell_voltage, BMSANT::CellsNumber);
-	CanInfoParam<int8_t>   obj_max_temperature_1(CAN_BASE_ID+18, 5000, &Temp::max[0]);
-	CanInfoParam<int8_t>   obj_max_temperature_2(CAN_BASE_ID+19, 5000, &Temp::max[1]);
-	CanStreamObj<int8_t>   obj_temperature_1(CAN_BASE_ID+20, Temp::temperatures[0], Temp::TEMP_TOTAL_COUNT);
-	CanStreamObj<int8_t>   obj_temperature_2(CAN_BASE_ID+21, Temp::temperatures[1], Temp::TEMP_TOTAL_COUNT);
+	CanStream<uint16_t> obj_low_voltage_batt_1(CAN_BASE_ID+16, data1.cell_voltage, BMSANT::CellsNumber);
+	CanStream<uint16_t> obj_low_voltage_batt_2(CAN_BASE_ID+17, data2.cell_voltage, BMSANT::CellsNumber);
+	CanInfoParam<int8_t> obj_max_temperature_1(CAN_BASE_ID+18, 5000, &max_temp[0]);
+	CanInfoParam<int8_t> obj_max_temperature_2(CAN_BASE_ID+19, 5000, &max_temp[1]);
+	CanStreamObj<int8_t, BMSANT::TempsNumber+16> obj_temperature_1(CAN_BASE_ID+20);
+	CanStreamObj<int8_t, BMSANT::TempsNumber+16> obj_temperature_2(CAN_BASE_ID+21);
 	
 	
 	void CAN_Enable()
@@ -133,6 +132,24 @@ namespace CANLib
 	inline void Loop(uint32_t &current_time)
 	{
 		can_manager.Processing();
+
+		static uint32_t timer1 = 0;
+		if(current_time - timer1 > obj_max_temperature_1.GetTimerPeriod())
+		{
+			timer1 = current_time;
+
+			obj_temperature_1.GetMax(max_temp[0]);
+		}
+
+		static uint32_t timer2 = 0;
+		if(current_time - timer2 > obj_max_temperature_2.GetTimerPeriod())
+		{
+			timer2 = current_time;
+			
+			obj_temperature_2.GetMax(max_temp[1]);
+		}
+
+		
 		
 		current_time = HAL_GetTick();
 		return;
@@ -140,3 +157,5 @@ namespace CANLib
 }
 
 IBlockInfoSender &BlockInfoSender = CANLib::obj_block_info;
+ICanStream &CanTempStream1 = CANLib::obj_temperature_1;
+ICanStream &CanTempStream2 = CANLib::obj_temperature_2;

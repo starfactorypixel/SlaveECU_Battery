@@ -4,9 +4,12 @@
 #include <drivers/BMSOther.h>
 #include <DrakePinD.hpp>
 #include <CUtils.h>
+#include <CanObj/ICanStream.hpp>
 
 extern UART_HandleTypeDef hBms1Uart;
 extern UART_HandleTypeDef hBms2Uart;
+extern ICanStream &CanTempStream1;
+extern ICanStream &CanTempStream2;
 
 namespace BMSLogic
 {
@@ -54,9 +57,10 @@ namespace BMSLogic
 
 	void UpdateCANObjects_BMS1(const BMSANT::packet_raw_reverse_t *data)
 	{
-		Temp::PutFromBms(0, data->temperature, BMSANT::TempsNumber);
-
-		//UpdateMaxTemperature();
+		for(uint8_t i = 0; i < BMSANT::TempsNumber; ++i)
+		{
+			CanTempStream1.Set(i, (int8_t)data->temperature[i]);
+		}
 	}
 
 	
